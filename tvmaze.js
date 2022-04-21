@@ -17,14 +17,16 @@ async function getShowsByTerm(term) {
   const resp = await axios.get(url);
   const shows = [];
   for (let show of resp.data) {
+    let img;
+    show.show.image.medium ? img = show.show.image.medium : "https://tinyurl.com/tv-missing";
     shows.push({
       id: show.show.id,
       name: show.show.name,
-      show: show.show.summary,
-      image: show.show.image.medium
+      summary: show.show.summary,
+      // image: show.show.image.medium
+      image: img
     })
   }
-  console.log(shows)
 
   return shows
 }
@@ -36,11 +38,13 @@ function populateShows(shows) {
   $showsList.empty();
 
   for (let show of shows) {
+    console.log(show.image)
     const $show = $(
         `<div data-show-id="${show.id}" class="Show col-md-12 col-lg-6 mb-4">
          <div class="media">
            <img 
-              src="http://static.tvmaze.com/uploads/images/medium_portrait/160/401704.jpg" 
+              
+              src = ${show.image}
               alt="Bletchly Circle San Francisco" 
               class="w-25 mr-3">
            <div class="media-body">
@@ -63,8 +67,10 @@ function populateShows(shows) {
  */
 
 async function searchForShowAndDisplay() {
-  const term = $("#searchForm-term").val();
+  const term = $("#searchQuery").val();
+  console.log(term)
   const shows = await getShowsByTerm(term);
+  console.log(shows)
 
   $episodesArea.hide();
   populateShows(shows);
