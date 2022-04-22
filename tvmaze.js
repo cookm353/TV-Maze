@@ -15,6 +15,7 @@ const $searchForm = $("#searchForm");
 
 async function getShowsByTerm(term) {
   const url = `https://api.tvmaze.com/search/shows?q=${term}`;
+  
   const resp = await axios.get(url);
   const shows = [];
   let img;
@@ -37,10 +38,6 @@ async function getShowsByTerm(term) {
 
   return shows
 }
- async function blarg() {
-  const data = await getShowsByTerm("Doctor Who")
-  console.log(data)
- }
 
 /** Given list of shows, create markup for each and to DOM */
 
@@ -76,15 +73,20 @@ function populateShows(shows) {
 
 async function searchForShowAndDisplay() {
   const term = $("#searchQuery").val();
-  const shows = await getShowsByTerm(term);
+  try {
+    const shows = await getShowsByTerm(term);
+    $episodesArea.hide();
+    populateShows(shows);
+  } catch {
+    alert("Error: Could not retrieve show")
+  }
 
-  $episodesArea.hide();
-  populateShows(shows);
 }
 
 $searchForm.on("submit", async function (evt) {
   evt.preventDefault();
   await searchForShowAndDisplay();
+  $episodesList.html("");
 });
 
 
@@ -124,7 +126,6 @@ function populateEpisodes(episodes) {
 
 async function showEpisodes(id) {
   const episodes = await getEpisodesOfShow(id);
-  console.log(episodes);
   populateEpisodes(episodes);
 }
 
@@ -132,6 +133,5 @@ $showsList.on("click", $(".Show-getEpisodes"), function(evt) {
   evt.preventDefault();
   const id = $(evt.target).closest(".Show").data("show-id");
   $episodesList.html("");
-  console.log(id);
   showEpisodes(id);
 })
