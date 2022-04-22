@@ -2,6 +2,7 @@
 
 const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
+const $episodesList = $("#episodesList");
 const $searchForm = $("#searchForm");
 
 
@@ -16,21 +17,30 @@ async function getShowsByTerm(term) {
   const url = `https://api.tvmaze.com/search/shows?q=${term}`;
   const resp = await axios.get(url);
   const shows = [];
+  let img;
+
   for (let show of resp.data) {
-    let img;
-    show.show.image.medium ? img = show.show.image.medium : "https://tinyurl.com/tv-missing";
-    shows.push({
+    const showInfo = {
       id: show.show.id,
       name: show.show.name,
-      summary: show.show.summary,
-      // image: show.show.image.medium
-      image: img
-    })
+      summary: show.show.summary
+    };
+    
+    if (show.show.image === null) {
+      showInfo.image = "https://tinyurl.com/tv-missing";
+    } else {
+      showInfo.image = show.show.image.medium;
+    }
+
+    shows.push(showInfo);
   }
 
   return shows
 }
-
+ async function blarg() {
+  const data = await getShowsByTerm("Doctor Who")
+  console.log(data)
+ }
 
 /** Given list of shows, create markup for each and to DOM */
 
@@ -38,14 +48,12 @@ function populateShows(shows) {
   $showsList.empty();
 
   for (let show of shows) {
-    console.log(show.image)
     const $show = $(
         `<div data-show-id="${show.id}" class="Show col-md-12 col-lg-6 mb-4">
          <div class="media">
            <img 
-              
               src = ${show.image}
-              alt="Bletchly Circle San Francisco" 
+              alt= ${show.name} 
               class="w-25 mr-3">
            <div class="media-body">
              <h5 class="text-primary">${show.name}</h5>
@@ -68,16 +76,13 @@ function populateShows(shows) {
 
 async function searchForShowAndDisplay() {
   const term = $("#searchQuery").val();
-  console.log(term)
   const shows = await getShowsByTerm(term);
-  console.log(shows)
 
   $episodesArea.hide();
   populateShows(shows);
 }
 
 $searchForm.on("submit", async function (evt) {
-  // evt.preventDefault();
   evt.preventDefault();
   await searchForShowAndDisplay();
 });
@@ -87,8 +92,46 @@ $searchForm.on("submit", async function (evt) {
  *      { id, name, season, number }
  */
 
-// async function getEpisodesOfShow(id) { }
+async function getEpisodesOfShow(id) {
+  const url = `http://api.tvmaze.com/shows/${id}/episodes`;
+  const resp = await axios.get(url);
+  const episodes = [];
+  
+  for (let episode of resp.data) {
+    episodes.push({
+      id: episode.id,
+      name: episode.name,
+      season: episode.season,
+      number: episode.number
+    });
+  }
+  // console.log(resp.data)
 
-/** Write a clear docstring for this function... */
+  return episodes;
+}
 
-// function populateEpisodes(episodes) { }
+/** Given list of episodes, create markup for each and append to DOM */
+
+function populateEpisodes(episodes) {
+  $episodesArea.show();
+  
+  for (let episode of episodes) {
+    const $newLi = $(`<li>${episode.name} (season ${episode.season}, episode ${episode.number})</li>`);
+    $episodesList.append($newLi);
+  }
+}
+
+
+async function showEpisodes(id) {
+  const episodes = await getEpisodesOfShow(id);
+  console.log(episodes);
+  populateEpisodes(episodes);
+}
+
+$showsList.on("click", $(".Show-getEpisodes"), function(evt) {
+  evt.preventDefault();
+  const id = $(evt.target).closest(".Show").data("show-id");
+  $episodesList.html("");
+  console.log(id);
+  showEpisodes(id);
+})
